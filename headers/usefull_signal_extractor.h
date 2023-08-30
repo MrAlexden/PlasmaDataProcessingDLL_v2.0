@@ -5,7 +5,7 @@
 
 #include <vector>       // for vector
 #include <algorithm>    // for min_element|max_element
-#include "peak_finder/peak_finder.h"
+#include "../peak_finder/peak_finder.h"
 
 /****************** ÓÑËÎÂÈÅ Î×ÈÑÒÊÈ ÎÒ ØÓÌÀ ******************/
 /*

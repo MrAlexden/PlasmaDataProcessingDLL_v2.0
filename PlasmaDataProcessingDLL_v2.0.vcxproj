@@ -156,24 +156,24 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="diagnostics\langmuir_probe.h" />
-    <ClInclude Include="interface.h" />
-    <ClInclude Include="dllmain.h" />
-    <ClInclude Include="error_codes.h" />
-    <ClInclude Include="Levenberg-Marquardt\levenberg_marquardt.h" />
+    <ClInclude Include="headers\dllmain.h" />
+    <ClInclude Include="headers\error_codes.h" />
+    <ClInclude Include="headers\interface.h" />
+    <ClInclude Include="headers\results_container.h" />
+    <ClInclude Include="headers\support_functions.h" />
+    <ClInclude Include="headers\usefull_signal_extractor.h" />
+    <ClInclude Include="headers\workspace.h" />
+    <ClInclude Include="levenberg_marquardt\levenberg_marquardt.h" />
     <ClInclude Include="myspace\mynamespace.h" />
-    <ClInclude Include="OpenCL\gpu_compute.h" />
+    <ClInclude Include="opencl\gpu_compute.h" />
     <ClInclude Include="peak_finder\peak_finder.h" />
     <ClInclude Include="progress_window\progress_window.h" />
     <ClInclude Include="progress_window\resource.h" />
-    <ClInclude Include="results_container.h" />
-    <ClInclude Include="support_functions.h" />
-    <ClInclude Include="usefull_signal_extractor.h" />
-    <ClInclude Include="workspace.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="OpenCL\kernel.cpp" />
     <ClCompile Include="peak_finder\peak_finder.cpp" />
+    <ClCompile Include="src\dllmain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="progress_window\ProgressBarWindowSource.rc" />

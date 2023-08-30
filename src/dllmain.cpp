@@ -1,4 +1,4 @@
-﻿#include "dllmain.h"
+﻿#include "../headers/dllmain.h"
 
 Data<double> workspace;                 // structure all the input data and global variables are stored in
 Results<double> results;                // the class all the results are stored in

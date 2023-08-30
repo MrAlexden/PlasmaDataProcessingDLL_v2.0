@@ -6,7 +6,7 @@
 #include <vector>       // for vector
 #include <algorithm>    // for min_element|max_element
 #include "../../PlasmaDataProcessing_DLL/PlasmaDataProcessing/Matrix_Class/mynamespace.h"
-#include "../error_codes.h"
+#include "../headers/error_codes.h"
 
 using namespace myspace;
 
