@@ -97,7 +97,7 @@ namespace myplasmadll
         /* independent variable */
         params_names.insert(params_names.begin(), std::string(&independent_variable, &independent_variable + 1));
         /* duplicate name of independent variable check */
-        myspace::erase_duplicates(params_names);
+        params_names = myspace::erase_duplicates(params_names);
 
         /* set up expression and check for errors */
         try

@@ -695,14 +695,14 @@ namespace myspace
 	template <typename T>
 		requires std::is_convertible_v<T, double>
 	inline T partial_derivative(_In_ const T x,
-								_In_ const VECTOR& vP,
+								_In_ const VECTOR& vp,
 								_In_ T(*fx)(const T x, const VECTOR & params),
 								_In_ const int numofparam)
 	{
 #define derivative_step 0.001
 
-		T f = std::move(fx(x, vP)), newx = x;
-		VECTOR newvP = vP;
+		T f = std::move(fx(x, vp)), newx = x;
+		VECTOR newvP = vp;
 
 		switch (numofparam)
 		{
@@ -739,16 +739,16 @@ namespace myspace
 	template <typename T>
 		requires std::is_convertible_v<T, double>
 	inline VECTOR gradient(_In_ const T x,
-						   _In_ const VECTOR& vP,
+						   _In_ const VECTOR& vp,
 						   _In_ T(*fx)(const T, const VECTOR&),
 						   _In_ const std::vector <bool>& vFixed = {})
 	{
 		int i, j, npar = 0;
 
 		if (vFixed.empty())
-			for (i = 0; i < vP.size(); ++i)
+			for (i = 0; i < vp.size(); ++i)
 				vFixed[i] = false;
-		if (vP.size() != vFixed.size())
+		if (vp.size() != vFixed.size())
 			return VECTOR();
 
 		/* считаем по скольки параметрам создаем градиент */
@@ -761,7 +761,7 @@ namespace myspace
 		/* заполняем вектор градиента */
 		for (i = 0, j = 0; i < vFixed.size(); ++i)
 			if (!vFixed[i])
-				v[j++] = partial_derivative(x, vP, fx, i);
+				v[j++] = partial_derivative(x, vp, fx, i);
 
 		return v;
 	};
@@ -780,24 +780,24 @@ namespace myspace
 	};
 
 	/* возвращает квадратичное отклонение функции fx от сета данных vx, vy.
-	возвращает 0 если vx.size() != vy.size() || vP.empty() */
+	возвращает 0 если vx.size() != vy.size() || vp.empty() */
 	/* TOO SLOW */
 	template <typename T>
 		requires std::is_convertible_v<T, double>
 	inline T Chi_sqr(_In_ const VECTOR& vx,
 					 _In_ const VECTOR& vy,
-					 _In_ const VECTOR& vP,
+					 _In_ const VECTOR& vp,
 					 _In_ T(*fx)(const T, const VECTOR&),
 					 _In_opt_ const unsigned int myboost = 1) // коэффициент ускорения вычисления
 	{
-		if (vx.size() != vy.size() || vP.empty())
+		if (vx.size() != vy.size() || vp.empty())
 			return (T)0;
 
 		T err = NULL, f;
 
 		for (size_t i = 0 + (myboost - 1); i < vy.size() - (myboost - 1); i += myboost)
 			/* myboost -1 чтобы было 0 если myboost == 1 */
-			f = fx(vx[i], vP) - vy[i], err += sqr(f) * myboost;
+			f = fx(vx[i], vp) - vy[i], err += sqr(f) * myboost;
 
 		return err;
 	};
@@ -843,15 +843,15 @@ namespace myspace
 	/* находит пересечение оси OX с функцией fx методом хорд */
 	inline double chord_method(_In_ const double x_in0,
 							   _In_ const double x_in1,
-							   _In_ const std::vector <double>& vP,
+							   _In_ const std::vector <double>& vp,
 							   _In_ double(*fx)(const double, const std::vector <double>&))
 	{
 		double x0 = x_in0, x1 = x_in1;
 		int n = 0;
 		while (abs(x1 - x0) > 10E-10 && n < 100)
 		{
-			x0 = x1 - (x1 - x0) * fx(x1, vP) / (fx(x1, vP) - fx(x0, vP));
-			x1 = x0 - (x0 - x1) * fx(x0, vP) / (fx(x0, vP) - fx(x1, vP));
+			x0 = x1 - (x1 - x0) * fx(x1, vp) / (fx(x1, vp) - fx(x0, vp));
+			x1 = x0 - (x0 - x1) * fx(x0, vp) / (fx(x0, vp) - fx(x1, vp));
 			++n;
 		}
 		return x1;
@@ -859,15 +859,15 @@ namespace myspace
 
 	/* находит пересечение оси OX с функцией fx методом Ньютона */
 	inline double newton_method(_In_ const double x_in,
-								_In_ const std::vector <double>& vP,
+								_In_ const std::vector <double>& vp,
 								_In_ double(*fx)(double, const std::vector <double>&))
 	{
 		double x0 = x_in, x1 = 0.0;
 		int n = 0;
 		while (abs(x1 - x0) > 10E-10 && n < 100)
 		{
-			x1 = x0 - fx(x0, vP) / partial_derivative(x0, vP, fx, -1);
-			x0 = x1 - fx(x1, vP) / partial_derivative(x1, vP, fx, -1);
+			x1 = x0 - fx(x0, vp) / partial_derivative(x0, vp, fx, -1);
+			x0 = x1 - fx(x1, vp) / partial_derivative(x1, vp, fx, -1);
 			++n;
 		}
 		return x1;
@@ -879,7 +879,7 @@ namespace myspace
 	Результат опционально можно домножить на коэфициент k (например разность двух соседних значений по Х) */
 	template <typename T>
 		requires std::is_convertible_v<T, double>
-	inline VECTOR diff(_In_ const VECTOR & in, _In_opt_ const T k = 1)
+	inline VECTOR differentiate(_In_ const VECTOR & in, _In_opt_ const T k = 1)
 	{
 		if (in.size() < 2) return VECTOR();
 		VECTOR out(in.size());
@@ -918,7 +918,7 @@ namespace myspace
 	/* searches the std::vector for copies of each element and modifies it such that every item is unic */
 	template <typename T>
 		requires std::equality_comparable<T>
-	inline int erase_duplicates(VECTOR & in)
+	inline VECTOR erase_duplicates(const VECTOR & in)
 	{
 		VECTOR buffer = { in[0] };
 
@@ -926,26 +926,26 @@ namespace myspace
 			if (std::find(buffer.begin(), buffer.end(), it) == buffer.end())
 				buffer.push_back(it);
 
-		in = buffer;
-
-		return 0;
+		return buffer;
 	};
 
 	/* normilizes the input data to range from 0 to 1 */
 	template <typename T>
 		requires std::is_convertible_v<T, double>
-	inline int normilize(VECTOR & in)
+	inline VECTOR normilize(const VECTOR & in)
 	{
+		VECTOR out(in.size());
+
 		T min = *min_element(in.begin(), in.end());
 		T max = *max_element(in.begin(), in.end());
 
-		for (auto & it : in)
-			it = (it - min) / (max - min);
+		for (size_t i = 0; i < in.size(); ++i)
+			out[i] = (in[i] - min) / (max - min);
 
-		return 0;
+		return out;
 	};
 
-	/* integrates by trpezoidal methodю
+	/* integrates by trpezoidal method.
 	returns 0 if vx.size() != vy.size() */
 	template <typename T>
 		requires std::is_convertible_v<T, double>
@@ -960,6 +960,34 @@ namespace myspace
 			integral += (vy[i] + vy[i + 1]) * (vx[i + 1] - vx[i]);
 
 		return integral / 2;
+	};
+
+	/* восстанавливает интеграл по производной.
+	vx - данные по оси Х, из которых будет восстановлен шаг.
+	vy - данные по оси Y (значения производной) */
+	template <typename T>
+		requires std::is_convertible_v<T, double>
+	VECTOR integrate_inverse(const VECTOR& vx, const VECTOR& vy, const bool right_to_left = false)
+	{
+		if (vx.size() != vy.size())
+			return VECTOR();
+
+		VECTOR originalData(vy.size());
+
+		if (right_to_left)
+		{
+			originalData.back() = 0.0;
+			for (long long i = vy.size() - 2; i >= 0; --i)
+				originalData[i] = originalData[i + 1] + vy[i] * (vx[i + 1] - vx[i]);
+		}
+		else
+		{
+			originalData[0] = 0.0;
+			for (size_t i = 1; i < vy.size(); ++i)
+				originalData[i] = originalData[i - 1] + vy[i] * (vx[i] - vx[i - 1]);
+		}
+
+		return originalData;
 	};
 
 	/* separates the given string *in* by the given delimeter (if its not specified, separates by default set : "\t \n,./*|_+-:;'()!%^&=<>[]")
@@ -1004,21 +1032,21 @@ namespace myspace
 	учитываются только те параметры, которые обьявлены как незафиксированные в vFixed */
 	/* TOO SLOW */
 	template <typename T>
-	matrix <T> HessianMatrix_accurate(_In_ const VECTOR & vP,
+	matrix <T> HessianMatrix_accurate(_In_ const VECTOR & vp,
 									  _In_ const std::vector <bool> & vFixed,
 									  _In_ const T x,	
 									  _In_ T(*fx)(const T, const VECTOR &))
 	{
 #define derivative_step 0.001
 
-		if (vP.size() != vFixed.size())
+		if (vp.size() != vFixed.size())
 		{
 			matrix <T> m;
 			return m;
 		}
 
 		int i, j, npar = 0;
-		T f = fx(x, vP);
+		T f = fx(x, vp);
 
 		/* считаем по скольки параметрам создаем матрицу Гессе */
 		for (i = 1; i < vFixed.size(); ++i)
@@ -1033,8 +1061,8 @@ namespace myspace
 			{
 				if (i == j)
 				{
-					VECTOR vneg = vP,
-						vpos = vP;
+					VECTOR vneg = vp,
+						vpos = vp;
 
 					vneg[j] -= derivative_step;
 					vpos[j] += derivative_step;
@@ -1043,10 +1071,10 @@ namespace myspace
 				}
 				else
 				{
-					VECTOR v1 = vP,
-						   v2 = vP,
-						   v3 = vP,
-						   v4 = vP;
+					VECTOR v1 = vp,
+						   v2 = vp,
+						   v3 = vp,
+						   v4 = vp;
 
 					v1[i] += derivative_step;
 					v2[i] += derivative_step;
@@ -1073,18 +1101,18 @@ namespace myspace
 	учитываются только те параметры, которые обьявлены как незафиксированные в vFixed */
 	/* TOO SLOW */
 	template <typename T>
-	matrix <T> HessianMatrix_approximate(_In_ const VECTOR & vP,
+	matrix <T> HessianMatrix_approximate(_In_ const VECTOR & vp,
 										 _In_ const std::vector <bool> & vFixed,
 										 _In_ const T x,
 										 _In_ T (*fx)(const T, const VECTOR &))
 	{
-		if (vP.size() != vFixed.size())
+		if (vp.size() != vFixed.size())
 		{
 			matrix <T> m;
 			return m;
 		}
 
-		matrix <T> jacobian = gradient(x, vP, fx, vFixed);
+		matrix <T> jacobian = gradient(x, vp, fx, vFixed);
 
 		return jacobian.transpose() * jacobian;
 	};
@@ -1093,7 +1121,7 @@ namespace myspace
 	/* TOO SLOW */
 	inline int make_matrixs_for_LM(_In_ const std::vector <double> & vx,
 								   _In_ const std::vector <double> & vy,
-								   _In_ const std::vector <double> & vP,
+								   _In_ const std::vector <double> & vp,
 								   _In_ const std::vector <bool> & vFixed,
 								   _In_ const unsigned int npar,
 								   _In_ double (*fx)(const double, const std::vector <double> &),
@@ -1112,7 +1140,7 @@ namespace myspace
 		for (int x = 0 + (myboost - 1); x < vx.size() - (myboost - 1); x += myboost)
 		{
 			/* заполнение матрицы Якоби производной в каждой точке */
-			std::vector <double> jacobian = gradient(vx[x], vP, fx, vFixed);
+			std::vector <double> jacobian = gradient(vx[x], vp, fx, vFixed);
 
 			/* заполнение матрицы Гессе J^T * J */
 			for (int i = 0; i < npar; ++i)
@@ -1121,7 +1149,7 @@ namespace myspace
 					hessian[i][j] += jacobian[i] * jacobian[j] * myboost;
 				
 				/* сразу же заполняем вектор (y - y(p)) * J */
-				errpartdrvtv[i] += (vy[x] - fx(vx[x], vP)) * jacobian[i] * myboost;
+				errpartdrvtv[i] += (vy[x] - fx(vx[x], vp)) * jacobian[i] * myboost;
 			}
 		}
 		
@@ -1129,17 +1157,17 @@ namespace myspace
 		/*for (int i = 0, j = 0; i < vFixed.size(); ++i)//работает
 			if (!vFixed[i])
 				errpartdrvtv[j++] = (curr_err -
-					Chi_sqr(vx, vy, vP + unit_vector<double>(vP.size(), i, derivative_step), fx, myboost))
+					Chi_sqr(vx, vy, vp + unit_vector<double>(vp.size(), i, derivative_step), fx, myboost))
 					/ derivative_step;*/
 
 		return 0;
 	};
 
-	/* аппроксимирует данные vx и vy функцией fx методом Левенберга-Марквардта и возвращает вектор с аппроксимированными переменными vP */
+	/* аппроксимирует данные vx и vy функцией fx методом Левенберга-Марквардта и возвращает вектор с аппроксимированными переменными vp */
 	/* TOO SLOW */
 	inline int LMfit(_In_ const std::vector <double> & vx,							// independent data
 					 _In_ const std::vector <double> & vy,							// dependent data
-					 _Inout_ std::vector <double> & vP,						// vector of parameters we are searching for
+					 _Inout_ std::vector <double> & vp,						// vector of parameters we are searching for
 					 _In_ const std::vector <bool> & vFixed,						// vector of param's fixed status 
 					 _In_ const unsigned int niter,									// number of max iterations this method does
 					 _In_ double (*fx)(const double, const std::vector <double> &),	// the function that the data will be approximated by
@@ -1151,7 +1179,7 @@ namespace myspace
 			return -1;
 		if (vFixed.empty())
 			return -1;
-		if (vP.size() != vFixed.size())
+		if (vp.size() != vFixed.size())
 			return -1;
 		if (niter <= NULL)
 			return -1;
@@ -1161,7 +1189,7 @@ namespace myspace
 			   nu = 10,
 			   params_err = 1E-5,
 			   minimum_err_step = 1E-12,
-			   curr_err = Chi_sqr(vx, vy, vP, fx, myboost),
+			   curr_err = Chi_sqr(vx, vy, vp, fx, myboost),
 			   new_err = 1,
 			   err_step = 1;
 		bool stop = false;
@@ -1171,8 +1199,8 @@ namespace myspace
 		{
 			if (!vFixed[i])
 				++npar;
-			if (is_invalid(vP[i]))
-				vP[i] = 1;
+			if (is_invalid(vp[i]))
+				vp[i] = 1;
 		}
 
 		matrix <double> hessian, I = IdentityMatrix<double>(npar);
@@ -1183,7 +1211,7 @@ namespace myspace
 			/* создание матрицы Гессе на данном шаге. Матрица Гессе заменена на J^T * J ->
 			произведение транспонированной матрицы Якоби (градиента в данной точке сета vx)
 			на нормальную матрицу Якоби */
-			make_matrixs_for_LM(vx, vy, vP, vFixed, npar, fx, hessian, errpartdrvtv, myboost);
+			make_matrixs_for_LM(vx, vy, vp, vFixed, npar, fx, hessian, errpartdrvtv, myboost);
 
 			for (; outer < niter && !stop;)
 			{
@@ -1207,7 +1235,7 @@ namespace myspace
 						deltaParamshandler[i] = deltaParams[j++];
 
 				/* считаем отклонение от данных с новыми параметрами */
-				new_err = Chi_sqr(vx, vy, vP + deltaParamshandler, fx, myboost);
+				new_err = Chi_sqr(vx, vy, vp + deltaParamshandler, fx, myboost);
 				err_step = new_err - curr_err;
 
 				if (norm(deltaParamshandler) <= params_err)
@@ -1217,10 +1245,10 @@ namespace myspace
 					if (err_step < 0)
 					{
 						/* присваиваем параметрам их уточненное значение */
-						vP += deltaParamshandler;
+						vp += deltaParamshandler;
 
 						/* пересчитываем матрицу Гессе, Якоби и градиент с новыми параметрами */
-						//make_matrixs_for_LM(vx, vy, vP, vFixed, npar, fx, hessian, errpartdrvtv, myboost);
+						//make_matrixs_for_LM(vx, vy, vp, vFixed, npar, fx, hessian, errpartdrvtv, myboost);
 
 						/* выходим из цикла так как приблизились к решению */
 						stop = true;
@@ -1820,9 +1848,9 @@ namespace myspace
 
 	template <typename T>
 		requires std::is_convertible_v<T, double>
-	inline int LevenbergMarquardt(_In_ const VECTOR& vX,							// independent data
-								  _In_ const VECTOR& vY,							// dependent data
-								  _Inout_ VECTOR& vP,								// vector of parameters we are searching for
+	inline int LevenbergMarquardt(_In_ const VECTOR& vx,							// independent data
+								  _In_ const VECTOR& vy,							// dependent data
+								  _Inout_ VECTOR& vp,								// vector of parameters we are searching for
 								  _In_ T(*fx)(const T, const VECTOR&),				// the function that the data will be approximated by
 								  _In_opt_ const std::vector <bool>& vF =
 											std::vector <bool>(),					// vector of param's fixed status 
@@ -1833,14 +1861,14 @@ namespace myspace
 		T lambda = 0.01f, up = 10, down = 1 / up, mult, err = 0, newerr = 0, derr = 0, target_derr = 1E-12;
 
 		/* check for input mistakes */
-		if (vX.size() != vY.size()
-			|| vX.size() <= myboost
-			|| vY.size() <= myboost)
+		if (vx.size() != vy.size()
+			|| vx.size() <= myboost
+			|| vy.size() <= myboost)
 			return -1;
 		if (vFixed.empty())
-			for (i = 0; i < vP.size(); ++i)
+			for (i = 0; i < vp.size(); ++i)
 				vFixed.push_back(false);
-		if (vP.size() != vFixed.size())
+		if (vp.size() != vFixed.size())
 			return -2;
 		if (niter == NULL)
 			return -3;
@@ -1850,15 +1878,15 @@ namespace myspace
 		{
 			if (!vFixed[i])
 				++npar;
-			if (is_invalid(vP[i]))
-				vP[i] = 1;
+			if (is_invalid(vp[i]))
+				vp[i] = 1;
 		}
 
 		matrix <T> Hessian(npar, npar, 0.0), ch(npar, npar, 0.0);
-		VECTOR grad(npar), drvtv(npar), delta(npar, 0.0), newvP = vP;
+		VECTOR grad(npar), drvtv(npar), delta(npar, 0.0), newvP = vp;
 
 		/* calculate the initial error ("chi-squared") */
-		err = Chi_sqr(vX, vY, vP, fx, myboost);
+		err = Chi_sqr(vx, vy, vp, fx, myboost);
 
 		/* main iteration */
 		for (it = 0; it < niter; ++it)
@@ -1872,16 +1900,16 @@ namespace myspace
 			}
 
 			/* calculate the approximation to the Hessian and the "derivative" drvtv */
-			for (x = 0 + (myboost - 1); x < vY.size() - (myboost - 1); x += myboost)
+			for (x = 0 + (myboost - 1); x < vy.size() - (myboost - 1); x += myboost)
 			{
 				/* calculate gradient */
 				for (i = 0, j = 0; i < vFixed.size(); ++i)
 					if (!vFixed[i])
-						grad[j++] = partial_derivative(vX[x], vP, fx, i);
+						grad[j++] = partial_derivative(vx[x], vp, fx, i);
 
 				for (i = 0; i < npar; ++i)
 				{
-					drvtv[i] += (vY[x] - fx(vX[x], vP)) * grad[i] * myboost;
+					drvtv[i] += (vy[x] - fx(vx[x], vp)) * grad[i] * myboost;
 
 					for (j = 0; j < npar; ++j)
 						Hessian[i][j] += grad[i] * grad[j] * myboost;
@@ -1904,9 +1932,9 @@ namespace myspace
 
 					for (i = 0, j = 0; i < vFixed.size(); ++i)
 						if (!vFixed[i])
-							newvP[i] = vP[i] + delta[j++];
+							newvP[i] = vp[i] + delta[j++];
 
-					newerr = Chi_sqr(vX, vY, newvP, fx, myboost);
+					newerr = Chi_sqr(vx, vy, newvP, fx, myboost);
 
 					derr = newerr - err;
 					ill = (derr > 0);
@@ -1922,7 +1950,7 @@ namespace myspace
 
 			for (i = 0; i < vFixed.size(); ++i)
 				if (!vFixed[i])
-					vP[i] = newvP[i];
+					vp[i] = newvP[i];
 
 			err = newerr;
 			lambda *= down;
@@ -1964,23 +1992,22 @@ namespace myspace
 	 * vector of size 2w+1, e.g. for w=2 b=(0,0,1,0,0). evaluating the polynome
 	 * yields the sg-coefficients.  at the border non symmectric vectors b are
 	 * used. */
-	inline void sg_smooth(_Inout_ std::vector <double>& v_in,
-						  _In_ const int width,
-						  _In_ const int deg)
+	inline std::vector<double> sg_smooth(	_In_ const std::vector <double> v_in,
+											_In_ const size_t width,
+											_In_ const size_t deg)
 	{
 		int i, j, k;
 
 		if ((width < 1) || (deg <= 0) || (v_in.size() < (2 * width + 2)))
-			return;
+			return std::vector<double>();
 
-		const int window = 2 * width + 1, endidx = v_in.size() - 1, endidxv = v_in.size() + window - 1;
-		std::vector <double> v(v_in.size() + window);
+		const size_t window = 2 * width + 1, endidx = v_in.size() - 1, endidxv = v_in.size() + window - 1;
+		std::vector <double> v(v_in.size() + window), v_out(v_in.size());
 
 		// realising reflect method
 		for (i = 0; i < width; ++i)
 			v[i] = v_in[width - i], v[endidxv - i] = v_in[endidx - (width - i)];
 		memcpy(&v[width], v_in.data(), sizeof(double) * v_in.size());
-		memset(v_in.data(), 0.0, sizeof(double) * v_in.size());
 
 		// generate input matrix for least squares fit
 		matrix<double> A(window, deg + 1);
@@ -1993,29 +2020,34 @@ namespace myspace
 		sg_coeff(m, c, window, deg, A);
 		
 		//now loop over rest of data. reusing the "symmetric" coefficients.
-		for (i = 0, k = 0; k < v_in.size(); ++i, ++k)
+		for (i = 0, k = 0; k < v_out.size(); ++i, ++k)
 			for (j = 0; j < c.size(); ++j)
-				v_in[k] += c[j] * v[i + j];
+				v_out[k] += c[j] * v[i + j];
 
-		return;
+		return v_out;
 	};
 
 	/* Performs Simple Moving Average filter on array v with certain window width */
-	inline void sma_smooth(_Inout_ std::vector <double> & v, _In_ const int window)
+	inline std::vector<double> sma_smooth(_In_ const std::vector <double> & v, _In_ const int window)
 	{
-		std::vector<double> copy(v.size() + int(window / 2) * 2);
+		std::vector<double> copy(v.size() + int(window / 2) * 2), out(v.size());
 		memcpy(copy.data(), v.data(), sizeof(double) * window / 2);
 		memcpy(copy.data() + window / 2, v.data(), sizeof(double) * v.size());
 		memcpy(copy.data() + v.size() + window / 2, v.data() + v.size() - window / 2, sizeof(double) * window / 2);
 		for (int i = 0; i < v.size(); ++i)
-			v[i] = myspace::sum(myspace::between(copy.begin() + i, copy.begin() + i + window)) / window;
+			out[i] = myspace::sum(myspace::between(copy.begin() + i, copy.begin() + i + window)) / window;
+
+		return out;
 	};
 
 	/* Performs Okada filter on array v with window width == 3 */
-	inline void okada_smooth(_Inout_ std::vector <double> & v)
+	inline std::vector<double> okada_smooth(_In_ const std::vector <double> & v)
 	{
+		std::vector<double> out(v.size());
 		for (int i = 1; i < v.size(); ++i)
-			if ((v[i] - v[i - 1]) * (v[i] - v[i + 1]) > 0) v[i] = (v[i + 1] + v[i - 1]) / 2;
+			if ((v[i] - v[i - 1]) * (v[i] - v[i + 1]) > 0) out[i] = (v[i + 1] + v[i - 1]) / 2;
+
+		return out;
 	};
 
 #pragma endregion

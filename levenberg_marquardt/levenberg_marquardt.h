@@ -14,9 +14,9 @@ namespace mystringcompute
 
 	template <typename T>
 		requires std::is_convertible_v<T, double>
-	inline int LevenbergMarquardt(_In_ const VECTOR& vX,								// independent data
-								  _In_ const VECTOR& vY,								// dependent data
-								  _Inout_ VECTOR& vP,									// vector of parameters we are searching for
+	inline int LevenbergMarquardt(_In_ const VECTOR& vx,								// independent data
+								  _In_ const VECTOR& vy,								// dependent data
+								  _Inout_ VECTOR& vp,									// vector of parameters we are searching for
 #if STRING_EXPRESSION <= 0
 								  _In_ T(*fx)(const T, const VECTOR&),					// the function that the data will be approximated by
 #endif
@@ -28,19 +28,19 @@ namespace mystringcompute
 		T lambda = 0.01f, up = 10, down = 1 / up, mult, err = 0, newerr = 0, derr = 0, target_derr = 1E-12;
 
 		/* check for input mistakes */
-		if (vX.size() != vY.size()
-			|| vX.size() <= myboost
-			|| vY.size() <= myboost)
+		if (vx.size() != vy.size()
+			|| vx.size() <= myboost
+			|| vy.size() <= myboost)
 			return -1;
 		if (vFixed.empty())
-			for (i = 0; i < vP.size(); ++i)
+			for (i = 0; i < vp.size(); ++i)
 				vFixed.push_back(false);
-		if (vP.size() != vFixed.size())
+		if (vp.size() != vFixed.size())
 			return -2;
 		if (niter == NULL)
 			return -3;
 #if STRING_EXPRESSION > 0
-		if (workspace.variables_values.size() - 1 != vP.size())
+		if (workspace.variables_values.size() - 1 != vp.size())
 			return -4;
 #endif
 
@@ -49,27 +49,27 @@ namespace mystringcompute
 		{
 			if (!vFixed[i])
 				++npar;
-			if (myspace::is_invalid(vP[i]))
-				vP[i] = 1;
+			if (myspace::is_invalid(vp[i]))
+				vp[i] = 1;
 		}
 
 		myspace::matrix <T> Hessian(npar, npar, 0.0), ch(npar, npar, 0.0);
-		VECTOR grad(npar), drvtv(npar), delta(npar, 0.0), newvP = vP;
+		VECTOR grad(npar), drvtv(npar), delta(npar, 0.0), newvP = vp;
 
 		/* calculate the initial error ("chi-squared") */
 #if GPU_COMPUTATION > 0
-		mygpucompute::create_gpu_kernel_for_Chi_sqr(vY.size(), workspace.names_of_expression_variables.size() - 1);
+		mygpucompute::create_gpu_kernel_for_Chi_sqr(vy.size(), workspace.names_of_expression_variables.size() - 1);
 
-		mygpucompute::set_gpu_independent_data(vX.data());
-		mygpucompute::set_gpu_dependent_data(vY.data());
+		mygpucompute::set_gpu_independent_data(vx.data());
+		mygpucompute::set_gpu_dependent_data(vy.data());
 
-		mygpucompute::set_gpu_variables_data(vP.data());
+		mygpucompute::set_gpu_variables_data(vp.data());
 
 		err = mygpucompute::calculate_gpu_Chi_sqr();
 #elif STRING_EXPRESSION > 0
-		err = s_Chi_sqr(vX, vY, vP, myboost);
+		err = s_Chi_sqr(vx, vy, vp, myboost);
 #else
-		err = myspace::Chi_sqr(vX, vY, vP, fx, myboost);
+		err = myspace::Chi_sqr(vx, vy, vp, fx, myboost);
 #endif
 
 		/* main iteration */
@@ -84,14 +84,14 @@ namespace mystringcompute
 			}
 
 #if STRING_EXPRESSION > 0
-			if (workspace.variables_values.size() > 1) memcpy(&workspace.variables_values[1], vP.data(), sizeof(T) * vP.size());
+			if (workspace.variables_values.size() > 1) memcpy(&workspace.variables_values[1], vp.data(), sizeof(T) * vp.size());
 #endif
 
 			/* calculate the approximation to the Hessian and the "derivative" drvtv */
-			for (x = 0 + (myboost - 1); x < vY.size() - (myboost - 1); x += myboost)
+			for (x = 0 + (myboost - 1); x < vy.size() - (myboost - 1); x += myboost)
 			{
 #if STRING_EXPRESSION > 0
-				workspace.variables_values[0] = vX[x];  T f = expression_parser.Eval();
+				workspace.variables_values[0] = vx[x];  T f = expression_parser.Eval();
 #endif
 
 				/* calculate gradient */
@@ -102,19 +102,19 @@ namespace mystringcompute
 					{
 						workspace.variables_values[i + 1] += derivative_step;
 						grad[j] = (expression_parser.Eval() - f) / derivative_step;
-						workspace.variables_values[i + 1] = vP[i];
+						workspace.variables_values[i + 1] = vp[i];
 					}
 	#undef derivative_step
 #else
-						grad[j] = partial_derivative(vX[x], vP, fx, i);
+						grad[j] = partial_derivative(vx[x], vp, fx, i);
 #endif
 
 				for (i = 0; i < npar; ++i)
 				{
 #if STRING_EXPRESSION > 0
-					drvtv[i] += (vY[x] - f) * grad[i] * myboost;
+					drvtv[i] += (vy[x] - f) * grad[i] * myboost;
 #else
-					drvtv[i] += (vY[x] - fx(vX[x], vP)) * grad[i] * myboost;
+					drvtv[i] += (vy[x] - fx(vx[x], vp)) * grad[i] * myboost;
 #endif
 
 					for (j = 0; j < npar; ++j)
@@ -138,15 +138,15 @@ namespace mystringcompute
 
 					for (i = 0, j = 0; i < vFixed.size(); ++i)
 						if (!vFixed[i])
-							newvP[i] = vP[i] + delta[j++];
+							newvP[i] = vp[i] + delta[j++];
 
 #if GPU_COMPUTATION > 0
 					mygpucompute::set_gpu_variables_data(newvP.data());
 					newerr = mygpucompute::calculate_gpu_Chi_sqr();
 #elif STRING_EXPRESSION > 0
-					newerr = s_Chi_sqr(vX, vY, newvP, myboost);
+					newerr = s_Chi_sqr(vx, vy, newvP, myboost);
 #else
-					newerr = myspace::Chi_sqr(vX, vY, newvP, fx, myboost);
+					newerr = myspace::Chi_sqr(vx, vy, newvP, fx, myboost);
 #endif
 					derr = newerr - err;
 					ill = (derr > 0);
@@ -162,7 +162,7 @@ namespace mystringcompute
 
 			for (i = 0; i < vFixed.size(); ++i)
 				if (!vFixed[i])
-					vP[i] = newvP[i];
+					vp[i] = newvP[i];
 
 			err = newerr;
 			lambda *= down;
