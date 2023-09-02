@@ -135,20 +135,6 @@ namespace myplasmadll
     /* extract signal out from the whole dataset and perform calculation with particular type of diagnostic */
     int calculate(_In_ const int calculation_type)
     {
-       
-        std::vector <double> vparams = (workspace.variables_values.size() > 1) ?
-            std::vector <double>(&workspace.variables_values[1], &workspace.variables_values[1] + workspace.variables_values.size() - 1) :
-            std::vector <double>();
-        // Замер времени выполнения
-        auto start = std::chrono::high_resolution_clock::now();
-        mystringcompute::LevenbergMarquardt(workspace.voltage, workspace.signal, vparams);
-        auto end = std::chrono::high_resolution_clock::now();
-        MessageBoxA(NULL, std::to_string(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count()).c_str(), "Error!", MB_ICONINFORMATION | MB_OK);
-        MessageBoxA(NULL, ( std::to_string(vparams[0]) + "\n" +
-                            std::to_string(vparams[1]) + "\n" + 
-                            std::to_string(vparams[2]) + "\n" + 
-                            std::to_string(vparams[3]) + "\n").c_str(), "Error!", MB_ICONINFORMATION | MB_OK);
-
 #if STRING_EXPRESSION > 0
         if (execution_order < 15) return SHOUT_ERR(ERR_NoetAllDataSet); // means that bitwise is less than 1.1.1.1
 #else

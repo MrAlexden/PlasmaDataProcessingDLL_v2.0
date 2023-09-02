@@ -101,9 +101,9 @@ public:
 
 
 	/* DATA GETTING */
-	std::vector <T> & const get_ramp()
+	std::vector <T> & const get_ramp() const
 	{
-		return ramp;
+		return const_cast<std::vector <T> &>(ramp);
 	}
 	myspace::matrix <T> & const get_mOriginalData() const 
 	{
