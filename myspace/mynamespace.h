@@ -963,28 +963,27 @@ namespace myspace
 	};
 
 	/* восстанавливает интеграл по производной.
-	vx - данные по оси Х, из которых будет восстановлен шаг.
+	(при учете что значения координаты OX имеют равномерное распределение и
+	потом, оционально, можно разделить на разность двух соседнийх значений по Х).
 	vy - данные по оси Y (значения производной) */
 	template <typename T>
 		requires std::is_convertible_v<T, double>
-	VECTOR integrate_inverse(const VECTOR& vx, const VECTOR& vy, const bool right_to_left = false)
+	VECTOR integrate_inverse(const VECTOR& vy, const bool right_to_left = false)
 	{
-		if (vx.size() != vy.size())
-			return VECTOR();
-
+		if (vy.size() < 2) return VECTOR();
 		VECTOR originalData(vy.size());
 
 		if (right_to_left)
 		{
 			originalData.back() = 0.0;
 			for (long long i = vy.size() - 2; i >= 0; --i)
-				originalData[i] = originalData[i + 1] + vy[i] * (vx[i + 1] - vx[i]);
+				originalData[i] = originalData[i + 1] + vy[i];
 		}
 		else
 		{
 			originalData[0] = 0.0;
 			for (size_t i = 1; i < vy.size(); ++i)
-				originalData[i] = originalData[i - 1] + vy[i] * (vx[i] - vx[i - 1]);
+				originalData[i] = originalData[i - 1] + vy[i];
 		}
 
 		return originalData;

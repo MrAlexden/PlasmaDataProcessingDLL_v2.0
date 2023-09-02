@@ -21,9 +21,7 @@ inline int prepare_ramp()
 
 	std::vector <double> voltage(workspace.voltage), ramp;
 
-	int todel = (int)abs(IVOLT[2] - IVOLT[1]) % 100; double length_between_voltage_peaks;
-	if ((double)todel / 100 <= 0.5) length_between_voltage_peaks = abs(IVOLT[2] - IVOLT[1]) - todel;
-	else length_between_voltage_peaks = abs(IVOLT[2] - IVOLT[1]) + 100 - todel;
+	int todel = (int)abs(IVOLT[2] - IVOLT[1]) % 100; double length_between_voltage_peaks = abs(IVOLT[2] - IVOLT[1]) + ((double)todel / 100 <= 0.5 ? 0 : 100) - todel;
 
 	/* +5 потому что мы нашли пики пилы, а в этой функции пила строится от нижней точки,
 	соответственно нужно спуститься вниз пилы (пила выглядит как "/|/|/")
@@ -45,17 +43,11 @@ inline int prepare_ramp()
 
 	if (amp_beg > amp_end) /* пила выглядит как '\' */
 	{
-		minormax = [](iterator begin, iterator end)
-		{
-			return max_element(begin, end);
-		};
+		minormax = [](iterator begin, iterator end) { return max_element(begin, end); };
 	}
 	else /* пила выглядит как '/' */
 	{
-		minormax = [](iterator begin, iterator end)
-		{
-			return min_element(begin, end);
-		};
+		minormax = [](iterator begin, iterator end) { return min_element(begin, end); };
 	}
 #undef iterator
 
@@ -86,25 +78,6 @@ inline double s_fx(const double x, const std::vector<double>& vparams = {})
 	workspace.variables_values[0] = x;
 
 	return expression_parser.Eval();
-};
-
-/* least squares error calculation function (works with preset string expression) */
-inline double s_Chi_sqr(_In_ const std::vector<double>& vx,
-						_In_ const std::vector<double>& vy,
-						_In_ const std::vector<double>& vparams = {},
-						_In_opt_ const unsigned int myboost = 1)
-{
-	if (vx.size() != vy.size())
-		return (double)NULL;
-
-	if (!vparams.empty() && workspace.variables_values.size() > 1) memcpy(&workspace.variables_values[1], vparams.data(), sizeof(double) * vparams.size());
-
-	double err = NULL, f;
-
-	for (size_t i = 0 + (myboost - 1); i < vy.size() - (myboost - 1); i += myboost)
-		workspace.variables_values[0] = vx[i], f = expression_parser.Eval() - vy[i], err += sqr(f) * myboost;
-
-	return err;
 };
 
 #endif

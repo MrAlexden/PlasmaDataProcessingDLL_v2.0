@@ -12,6 +12,26 @@ namespace mystringcompute
 
 #define VECTOR std::vector<T>
 
+	/* least squares error calculation function (works with preset string expression) */
+	static inline double s_Chi_sqr(	_In_ const std::vector<double>& vx,
+									_In_ const std::vector<double>& vy,
+									_In_ const std::vector<double>& vparams = {},
+									_In_opt_ const unsigned int myboost = 1)
+	{
+		if (vx.size() != vy.size()) [[unlikely]]
+			return (double)NULL;
+
+		if (!vparams.empty() && workspace.variables_values.size() > 1) [[unlikely]]
+			memcpy(&workspace.variables_values[1], vparams.data(), sizeof(double) * vparams.size());
+
+		double err = NULL, f;
+
+		for (size_t i = 0 + (myboost - 1); i < vy.size() - (myboost - 1); i += myboost)
+			workspace.variables_values[0] = vx[i], f = expression_parser.Eval() - vy[i], err += sqr(f) * myboost;
+
+		return err;
+	};
+
 	template <typename T>
 		requires std::is_convertible_v<T, double>
 	inline int LevenbergMarquardt(_In_ const VECTOR& vx,								// independent data
@@ -30,17 +50,17 @@ namespace mystringcompute
 		/* check for input mistakes */
 		if (vx.size() != vy.size()
 			|| vx.size() <= myboost
-			|| vy.size() <= myboost)
+			|| vy.size() <= myboost) [[unlikely]]
 			return -1;
-		if (vFixed.empty())
+		if (vFixed.empty()) [[unlikely]]
 			for (i = 0; i < vp.size(); ++i)
 				vFixed.push_back(false);
-		if (vp.size() != vFixed.size())
+		if (vp.size() != vFixed.size()) [[unlikely]]
 			return -2;
-		if (niter == NULL)
+		if (niter == NULL) [[unlikely]]
 			return -3;
 #if STRING_EXPRESSION > 0
-		if (workspace.variables_values.size() - 1 != vp.size())
+		if (workspace.variables_values.size() - 1 != vp.size()) [[unlikely]]
 			return -4;
 #endif
 
@@ -49,7 +69,7 @@ namespace mystringcompute
 		{
 			if (!vFixed[i])
 				++npar;
-			if (myspace::is_invalid(vp[i]))
+			if (myspace::is_invalid(vp[i])) [[unlikely]]
 				vp[i] = 1;
 		}
 
@@ -82,9 +102,10 @@ namespace mystringcompute
 				for (j = 0; j < npar; ++j)
 					Hessian[i][j] = 0;
 			}
-
+			
 #if STRING_EXPRESSION > 0
-			if (workspace.variables_values.size() > 1) memcpy(&workspace.variables_values[1], vp.data(), sizeof(T) * vp.size());
+			if (workspace.variables_values.size() > 1) [[likely]]
+				memcpy(&workspace.variables_values[1], vp.data(), sizeof(T) * vp.size());
 #endif
 
 			/* calculate the approximation to the Hessian and the "derivative" drvtv */
@@ -167,7 +188,7 @@ namespace mystringcompute
 			err = newerr;
 			lambda *= down;
 
-			if ((!ill) && (-derr < target_derr))
+			if ((!ill) && (-derr < target_derr)) [[unlikely]]
 				//if ((!ill) && (abs(err) < target_derr))
 				break;
 		}
