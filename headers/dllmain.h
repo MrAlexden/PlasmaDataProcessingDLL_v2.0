@@ -18,7 +18,7 @@
 
 /* Макросы */
 #if MESSAGEBOX > 0
-	#define SHOUT_ERR(f) MessageBoxA(NULL, ERR_GetErrorDescription(f).c_str(), "Error!", MB_ICONINFORMATION | MB_OK), f
+	#define SHOUT_ERR(f) MessageBoxA(NULL, ERR_GetErrorDescription(f).c_str(), "Error!", MB_ICONINFORMATION | MB_OK), err_num(f)
 #else
 	#define SHOUT_ERR(f) f
 #endif
@@ -27,11 +27,11 @@
 #include "interface.h"
 
 /* Мои файлы заголовков */
+#include "error_codes.h"
 #include "../myspace/mynamespace.h"				// usefull functions which can be used by any file
 #include "workspace.h"							// global workspace
 #include "results_container.h"					// global results
 #include "usefull_signal_extractor.h"
-#include "error_codes.h"
 #include "../muparser/include/muParser.h"
 #include "../OpenCL/gpu_compute.h"
 #include "support_functions.h"

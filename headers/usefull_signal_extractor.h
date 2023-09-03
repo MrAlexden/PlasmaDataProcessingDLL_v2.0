@@ -277,7 +277,7 @@ inline int erase_noise()
 	if (workspace.is_empty()) return ERR_StorageIsEmpty;
 
 	int err = 0, begin, end;
-	std::vector <double> voltage(workspace.voltage), signal(workspace.get_signal_ptr(), workspace.get_signal_ptr() + workspace.get_signal_length());
+	std::vector <double> voltage(workspace.voltage), signal(workspace.signal);
 
 	/* находим все участки на пиле при помощи пиков */
 	err = PeakFinder::findPeaks(voltage, IVOLT), ISIGN = IVOLT;

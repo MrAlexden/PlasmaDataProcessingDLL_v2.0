@@ -13,7 +13,7 @@ namespace myplasmadll
     {
         if (in == nullptr || size == 0) return SHOUT_ERR(ERR_BadInputVecs);
 
-        workspace.set_voltage(in, size);
+        workspace.voltage = std::vector<double>(in, in + size);
 
         /* now we know that the voltge is set */
         execution_order |= 1 << 3;
@@ -26,7 +26,7 @@ namespace myplasmadll
     {
         if (in == nullptr || size == 0) return SHOUT_ERR(ERR_BadInputVecs);
 
-        workspace.set_signal(in, size);
+        workspace.signal = std::vector<double>(in, in + size);
 
         /* now we know that the signal is set */
         execution_order |= 1 << 2;
@@ -135,6 +135,7 @@ namespace myplasmadll
     /* extract signal out from the whole dataset and perform calculation with particular type of diagnostic */
     int calculate(_In_ const int calculation_type)
     {
+        /* проверяем порядок вызова функций */
 #if STRING_EXPRESSION > 0
         if (execution_order < 15) return SHOUT_ERR(ERR_NoetAllDataSet); // means that bitwise is less than 1.1.1.1
 #else
@@ -143,11 +144,23 @@ namespace myplasmadll
 
         int err = 0;
 
+        /* преобразуем напряжение и сигнал с учетом усилителей/делителей/сопротивлений */
         workspace.voltage *= workspace.amplification_factor;
         workspace.signal /= workspace.measuring_resistance;
 
+        /* находим сигнал/удаляем шум */
         ERR(erase_noise());
+        /* подготавливаем один отрезок пилы */
         ERR(prepare_ramp());
+
+        /* подготавливаем необходимое пространство памяти в results */
+        switch (calculation_type)
+        {
+        default:
+            results.set_number_of_results(4);
+            results.set_number_of_segments(workspace.segments_beginning_indices.size());
+            results.set_number_of_scalings(4);
+        }
 
 #define ISIGN workspace.segments_beginning_indices
 #define LEN results.get_size_of_segment()
@@ -166,7 +179,7 @@ namespace myplasmadll
                     SendMessage(GetDlgItem(workspace.progress_window, IDC_PROGRESS1), PBM_SETPOS, n, NULL),
                     SetDlgItemText(workspace.progress_window, IDC_STATIC, std::wstring(L"In Progress... " + std::to_wstring(int(((double)n / ISIGN.size()) * 100)) + L" %").c_str());
 #endif
-
+                
                 ERR(make_one_segment(calculation_type, 
                     results.ramp().data(), LEN,
                     workspace.signal.data() + ISIGN[n], LEN));

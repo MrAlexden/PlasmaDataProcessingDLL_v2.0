@@ -79,54 +79,6 @@ public:
         this->~Data();
     }
 
-    void set_voltage(const T* in_data_ptr, const size_t in_length)
-    {
-        voltage.resize(in_length);
-        std::memcpy(voltage.data(), in_data_ptr, sizeof(T) * (in_length));
-    }
-
-    void set_signal(const T* in_data_ptr, const size_t in_length)
-    {
-        signal.resize(in_length);
-        std::memcpy(signal.data(), in_data_ptr, sizeof(T) * (in_length));
-    }
-
-    T* get_voltage_ptr() const
-    {
-        return (T*)voltage.data();
-    }
-
-    size_t get_voltage_length() const
-    {
-        return voltage.size();
-    }
-
-    size_t get_voltage_bytes() const
-    {
-        if (voltage.empty())
-            return NULL;
-
-        return sizeof(T) * voltage.size();
-    }
-
-    T* get_signal_ptr() const
-    {
-        return (T*)signal.data();
-    }
-
-    size_t get_signal_length() const
-    {
-        return signal.size();
-    }
-
-    size_t get_signal_bytes() const
-    {
-        if (signal.empty())
-            return NULL;
-
-        return sizeof(T) * signal.size();
-    }
-
     bool is_empty() const
     {
         return (voltage.empty() && signal.empty()) ? true : false;

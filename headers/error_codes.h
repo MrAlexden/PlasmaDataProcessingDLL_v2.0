@@ -90,4 +90,20 @@ end time must be less then total time, more then 0";
     }
 };
 
+/* std::string input overload */
+inline std::string ERR_GetErrorDescription(std::string s_err)
+{
+    return s_err;
+};
+
+inline int err_num(int err)
+{
+    return err;
+};
+
+inline int err_num(std::string s_err)
+{
+    return -1;
+};
+
 #endif

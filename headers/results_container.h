@@ -75,7 +75,7 @@ public:
 		if (_number_of_segments != 0 && _size_of_segment != 0)
 			for (size_t i = 0; i < number_of_results; ++i)
 				if (_results[i].empty())
-					_results[i](_number_of_segments, _size_of_segment);
+					_results[i].set_size(_number_of_segments, _size_of_segment);
 	}
 	void set_number_of_segments(const size_t number_of_segments)
 	{
@@ -111,16 +111,21 @@ public:
 	/* GETTING ACCESS */
 	std::vector <T> & const ramp() const
 	{
-		//static_assert(/*!_ramp.empty()*//*fs != NULL*/, "You must set size_of_segment first");
+		if (_size_of_segment <= 0)
+		{ std::vector<T> v; return SHOUT_ERR("size_of_segment equals to 0 but an attempt to get access to this data was made"), v; }
 		return const_cast<std::vector <T> &>(_ramp);
 	}
 	myspace::matrix <T> & const operator [] (size_t i) const
 	{
+		if (_number_of_results <= 0)
+		{ std::vector<T> v; return SHOUT_ERR("number_of_results equals to 0 but an attempt to get access to this data was made"), v; }
 		return _results[i];
 	}
 	myspace::matrix <T> & const scalings() const
 	{
-		return const_cast<std::vector <T> &>(scalings);
+		if (_number_of_scalings <= 0 && _number_of_segments <= 0)
+		{ std::vector<T> v; return SHOUT_ERR("number_of_scalings equals to 0 but an attempt to get access to this data was made"), v; }
+		return _scalings; // const_cast<std::vector <T> &>(
 	}
 
 
@@ -145,11 +150,5 @@ public:
 };
 
 extern Results<double> results;
-
-class asd
-{
-public:
-private:
-};
 
 #endif
