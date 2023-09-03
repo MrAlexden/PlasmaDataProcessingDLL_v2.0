@@ -9,153 +9,147 @@ template <typename T>
 	requires std::is_convertible_v<T, double>
 class Results
 {
+private:
+
+	std::vector <T> _ramp;							//	Результирующая пила (1 период (или отрезок)). Размер может быть порядка 1000 - 4000. Период пилы например 1 / (50 Гц) сек
+	std::vector <myspace::matrix <T>> _results;		/*	Все промежуточные результаты математических преобразований.размер _results может быть например 3 - 4.
+														В каждом i-ом элементе _results хранится матрица с промежуточными вычислениями определенных
+														математических операций, например:
+														0 - оригинальный сигнал каждого отрезка, "порубленный пилой";
+														1 - фильтрация каждого отрезка;
+														2 - производная фильтрации каждого отрезка;
+														3 - аппроксимаия фильтрации каждого отрезка и т.д.
+														Размер всех матриц одинаков и обычно сотавляет 90 - 100 (отрезков(строки)) на 1000 - 4000 (точек в отрезке(столбцы)).
+														Размеры столбцов матриц и размер _ramp всегда совпадают. */
+	myspace::matrix <T> _scalings;					/*	Матрица со всеми скейлингами размера 90 - 100 (отрезков(строки)) на 4 - 5 (параметров(столбцы)).
+														Для каждого отрезка в этой матрице хранится одинаковое количество параметров,
+														расчитанных для него в результате обработки (первый параметр всегда время начала отрезка). Например:
+														1 - максимальный сигнал в этом отрезке;
+														2 - средняя энергия частиц в этом отрезке;
+														3 - потенциал пика энергораспределения в этом отрезке;
+														4 - плотность плазмы в этом отрезке;
+														Количество строк матрицы _scalings всегда совпадает с количеством строк матриц -results[i]. */
+
+	size_t _number_of_results;		// Количество сохраненных (для последующего вывода на графики) результатов работы промежуточных математических действий (3 - 4 штуки)					
+	size_t _number_of_segments;		// Количество обнаруженных отрезков (периодов прохождения пилобразного напряжения) за время разряда (90 - 100 штук)
+	size_t _size_of_segment;		// Количесто точек в одном отрезке (точки, снятые за период пилы (1000 - 4000 штук)). Частота дискретизации АЦП например порядка 150 - 200 кГц.
+	size_t _number_of_scalings;		// Количество результатов расчета (они же скейлинги от времени (первый столбец)) (4 - 5 штук)
+
 public:
 
 	Results() :
-		NumberOfSegments(0),
-		SizeOfSegment(0),
-		NumberOfParameters(0)
+		_number_of_results(0),
+		_number_of_segments(0),
+		_size_of_segment(0),
+		_number_of_scalings(0)
+	{}
+	Results(const size_t number_of_results, const size_t number_of_segments, const size_t size_of_segment, const size_t number_of_scalings) :
+		_number_of_results(number_of_results),
+		_number_of_segments(number_of_segments),
+		_size_of_segment(size_of_segment),
+		_number_of_scalings(number_of_scalings)
 	{
+		_ramp.resize(size_of_segment);
+
+		_results.resize(number_of_results);
+		for (size_t i = 0; i < number_of_results; ++i)
+			_results[i](number_of_segments, size_of_segment);
+
+		_scalings(number_of_scalings, number_of_segments);
 	}
+
 	~Results()
 	{
-		ramp.clear();
-
-		for (int i = 0; i < NumberOfSegments; ++i)
-		{
-			mOriginalData[i].clear();
-			mFiltratedData[i].clear();
-			mApproximatedData[i].clear();
-			mDifferentiatedData[i].clear();
-			mParametersData[i].clear();
-		}
-
-		mOriginalData.clear();
-		mFiltratedData.clear();
-		mApproximatedData.clear();
-		mDifferentiatedData.clear();
-		mParametersData.clear();
-	}
-	Results(int Number_Of_Segments, int Size_Of_Segment, int Number_Of_Parameters)
-	{
-		NumberOfSegments = Number_Of_Segments;
-		SizeOfSegment = Size_Of_Segment;
-		NumberOfParameters = Number_Of_Parameters;
-
-		mOriginalData.resize(Number_Of_Segments);
-		mFiltratedData.resize(Number_Of_Segments);
-		mApproximatedData.resize(Number_Of_Segments);
-		mDifferentiatedData.resize(Number_Of_Segments);
-		mParametersData.resize(Number_Of_Segments);
-	}
-	void set_SegmentsNumber(int Number_Of_Segments)
-	{
-		NumberOfSegments = Number_Of_Segments;
-
-		mOriginalData.resize(Number_Of_Segments);
-		mFiltratedData.resize(Number_Of_Segments);
-		mApproximatedData.resize(Number_Of_Segments);
-		mDifferentiatedData.resize(Number_Of_Segments);
-		mParametersData.resize(Number_Of_Segments);
-	}
-	void set_SegmentsSize(int Size_Of_Segment)
-	{
-		SizeOfSegment = Size_Of_Segment;
-	}
-	void set_ParamsNumber(int Number_Of_Parameters)
-	{
-		NumberOfParameters = Number_Of_Parameters;
+		_ramp.clear();
+		_results.clear();
 	}
 
 
-	/* DATA SETTING */
-	void set_ramp(std::vector <T> & v)
+
+	/* RESIZING */
+	void set_number_of_results(const size_t number_of_results)
 	{
-		ramp = v;
+		_number_of_results = number_of_results;
+
+		_results.resize(number_of_results);
+		if (_number_of_segments != 0 && _size_of_segment != 0)
+			for (size_t i = 0; i < number_of_results; ++i)
+				if (_results[i].empty())
+					_results[i](_number_of_segments, _size_of_segment);
 	}
-	int set_OriginSegment(std::vector <T> & v, int i)
+	void set_number_of_segments(const size_t number_of_segments)
 	{
-		if (i > NumberOfSegments || i < 0) return -1;
-		mOriginalData[i] = v;
+		_number_of_segments = number_of_segments;
+
+		if (_number_of_results != 0 && _size_of_segment != 0)
+			for (size_t i = 0; i < _number_of_results; ++i)
+					_results[i].set_size(number_of_segments, _size_of_segment);
+
+		if (_number_of_scalings != 0)
+			_scalings.set_size(_number_of_scalings, number_of_segments);
 	}
-	int set_FiltedSegment(std::vector <T> & v, int i)
+	void set_size_of_segment(const size_t size_of_segment)
 	{
-		if (i > NumberOfSegments || i < 0) return -1;
-		mFiltratedData[i] = v;
+		_size_of_segment = size_of_segment;
+
+		_ramp.resize(size_of_segment);
+
+		if (_number_of_results != 0 && _number_of_segments != 0)
+			for (size_t i = 0; i < _number_of_results; ++i)
+				_results[i].set_size(_number_of_segments, size_of_segment);
 	}
-	int set_ApproxSegment(std::vector <T> & v, int i)
+	void set_number_of_scalings(const size_t number_of_scalings)
 	{
-		if (i > NumberOfSegments || i < 0) return -1;
-		mApproximatedData[i] = v;
-	}
-	int set_DiffedSegment(std::vector <T> & v, int i)
-	{
-		if (i > NumberOfSegments || i < 0) return -1;
-		mDifferentiatedData[i] = v;
-	}
-	int set_ParamsSegment(std::vector <T> & v, int i)
-	{
-		if (i > NumberOfSegments || i < 0) return -1;
-		mParametersData[i] = v;
+		_number_of_scalings = number_of_scalings;
+
+		if (_number_of_segments != 0)
+			_scalings.set_size(number_of_scalings, _number_of_segments);
 	}
 
 
-	/* DATA GETTING */
-	std::vector <T> & const get_ramp() const
+
+	/* GETTING ACCESS */
+	std::vector <T> & const ramp() const
 	{
-		return const_cast<std::vector <T> &>(ramp);
+		//static_assert(/*!_ramp.empty()*//*fs != NULL*/, "You must set size_of_segment first");
+		return const_cast<std::vector <T> &>(_ramp);
 	}
-	myspace::matrix <T> & const get_mOriginalData() const 
+	myspace::matrix <T> & const operator [] (size_t i) const
 	{
-		return mOriginalData;
+		return _results[i];
 	}
-	myspace::matrix <T> & const get_mFiltratedData() const
+	myspace::matrix <T> & const scalings() const
 	{
-		return mFiltratedData;
+		return const_cast<std::vector <T> &>(scalings);
 	}
-	myspace::matrix <T> & const get_mApproximatedData() const
-	{
-		return mApproximatedData;
-	}
-	myspace::matrix <T> & const get_mDifferentiatedData() const
-	{
-		return mDifferentiatedData;
-	}
-	myspace::matrix <T> & const get_mParametersData() const
-	{
-		return mParametersData;
-	}
+
 
 
 	/* DIMENSION GETTING */
-	int get_NumberOfSegments() const
+	size_t get_number_of_results() const
 	{
-		return NumberOfSegments;
+		return _number_of_results;
 	}
-	int get_SizeOfSegment() const
+	size_t get_number_of_segments() const
 	{
-		return SizeOfSegment;
+		return _number_of_segments;
 	}
-	int get_NumberOfParameters() const
+	size_t get_size_of_segment() const
 	{
-		return NumberOfParameters;
+		return _size_of_segment;
 	}
-
-private:
-
-	std::vector <T> ramp;
-
-	myspace::matrix <T> mOriginalData;
-	myspace::matrix <T> mFiltratedData;
-	myspace::matrix <T> mApproximatedData;
-	myspace::matrix <T> mDifferentiatedData;
-	myspace::matrix <T> mParametersData;
-
-	int NumberOfSegments;
-	int SizeOfSegment;
-	int NumberOfParameters;
+	size_t get_number_of_scalings() const
+	{
+		return _number_of_scalings;
+	}
 };
 
 extern Results<double> results;
+
+class asd
+{
+public:
+private:
+};
 
 #endif

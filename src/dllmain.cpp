@@ -150,7 +150,7 @@ namespace myplasmadll
         ERR(prepare_ramp());
 
 #define ISIGN workspace.segments_beginning_indices
-#define LEN results.get_SizeOfSegment()
+#define LEN results.get_size_of_segment()
 
 #if SHOW_PROGRESS > 0
         {
@@ -168,7 +168,7 @@ namespace myplasmadll
 #endif
 
                 ERR(make_one_segment(calculation_type, 
-                    results.get_ramp().data(), LEN,
+                    results.ramp().data(), LEN,
                     workspace.signal.data() + ISIGN[n], LEN));
             }
 

@@ -59,8 +59,10 @@ inline int prepare_ramp()
 	ramp[0] = *(voltage.begin() + (IVOLT[1] + 5) + index_of_minormax + L * length_between_voltage_peaks);
 	for (int i = 1; i < ramp.size(); ++i)
 		ramp[i] = ramp[i - 1] + delta;
-	results.set_ramp(ramp);
 
+	results.set_size_of_segment(ramp.size());
+	memcpy(results.ramp().data(), ramp.data(), sizeof(decltype(ramp)::value_type) * ramp.size());
+	
 	return 0;
 
 #undef IVOLT
