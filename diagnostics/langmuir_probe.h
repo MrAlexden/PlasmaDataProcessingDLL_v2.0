@@ -1,13 +1,13 @@
 #pragma once
 
-#ifdef LANGMUIR_PROBE
+#ifndef LANGMUIR_PROBE
 #define LANGMUIR_PROBE
 
 #include <vector>
 #include "../headers/error_codes.h"
 #include "../myspace/mynamespace.h"
 
-inline int langmuir_probe(std::vector<double> & vx, std::vector<double> & vy, )
+inline int langmuir_probe(std::vector<double> & vx, std::vector<double> & vy)
 {
 
 	if (vx.size() != vy.size()

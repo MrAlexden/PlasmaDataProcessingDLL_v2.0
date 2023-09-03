@@ -38,6 +38,7 @@
 #include "../levenberg_marquardt/levenberg_marquardt.h"
 #include "../progress_window/resource.h"
 #include "../progress_window/progress_window.h"
+#include "../diagnostics/langmuir_probe.h"
 
 /* Глобальные переменные */
 extern mu::Parser expression_parser;			// string expression parser and evaluator class

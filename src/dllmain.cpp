@@ -167,25 +167,30 @@ namespace myplasmadll
 
 #if SHOW_PROGRESS > 0
         {
+            /* запускаем отдельное окошко с прогресс баром */
             ThreadArgs args; HANDLE progress_window_thread;
             if (progress_window_thread = CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)&DialogBoxParamWrapper, &args, NULL, NULL), progress_window_thread)
                 WaitForSingleObject(progress_window_thread, 10), SendMessage(GetDlgItem(workspace.progress_window, IDC_PROGRESS1), PBM_SETRANGE, 0, MAKELPARAM(0, ISIGN.size() - 1));
 #endif
 
+            /* основной цикл обработки */
             for (int n = 0; n < ISIGN.size(); ++n)
             {
 #if SHOW_PROGRESS > 0
-                if (n % 4 == 0) // отправляю мэсседж раз в 4 итерации чтобы меньше нагружать
+                /* ставим прогресс раз в 4 итерации, чтобы он успевал соображать (иначе не видно заполнения) */
+                if (n % 4 == 0)
                     SendMessage(GetDlgItem(workspace.progress_window, IDC_PROGRESS1), PBM_SETPOS, n, NULL),
                     SetDlgItemText(workspace.progress_window, IDC_STATIC, std::wstring(L"In Progress... " + std::to_wstring(int(((double)n / ISIGN.size()) * 100)) + L" %").c_str());
 #endif
                 
+                /* обрабатываем отрезок и заполняем results */
                 ERR(make_one_segment(calculation_type, 
                     results.ramp().data(), LEN,
                     workspace.signal.data() + ISIGN[n], LEN));
             }
 
 #if SHOW_PROGRESS > 0
+            /* убираем окошко */
             if (progress_window_thread)
             {
                 EndDialog(workspace.progress_window, NULL);

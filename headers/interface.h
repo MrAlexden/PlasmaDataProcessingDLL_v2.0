@@ -76,6 +76,14 @@ namespace myplasmadll
 	}
 #endif
 
+	typedef enum
+	{
+		LANGMUIR_PROBE,
+		DOUBLE_LANGMUIR_PROBE,
+		RETARDING_FIELD_ANALYZER,
+		RADIAL_CYLINDRICAL_ANALYZER,
+		MAGNETIC_PLASMA_ANALYSER
+	} diagnostics;
 }
 
 #endif /* INTERFACE_H */
