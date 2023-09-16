@@ -82,4 +82,41 @@ inline double s_fx(const double x, const std::vector<double>& vparams = {})
 	return expression_parser.Eval();
 };
 
+/* perform calculation at one segment. all the data must be cleaned out of noise and prepared already.
+	this is its dll's own inner function */
+inline int _make_one_segment(	_In_ const double* vx, _In_ const unsigned int x_size,
+								_In_ const double* vy, _In_ const unsigned int y_size)
+{
+	int err = 0;
+
+	std::vector <double> vparams = (workspace.variables_values.size() > 1) ?
+		std::vector <double>(&workspace.variables_values[1], &workspace.variables_values[1] + workspace.variables_values.size() - 1) :
+		std::vector <double>();
+
+#if STRING_EXPRESSION > 0
+	ERR(mystringcompute::LevenbergMarquardt(std::vector<double>(vx, vx + x_size), std::vector<double>(vy, vy + y_size), vparams));
+#else
+	ERR(myspace::LevenbergMarquardt(std::vector<double>(vx, vx + x_size), std::vector<double>(vy, vy + y_size), vparams, fx));
+#endif
+
+EndBlock:
+
+	return err;
+};
+
+/* preparing the necessary memory space in results */
+inline int allocate_place_for_results()
+{
+	/* подготавливаем необходимое пространство памяти в results */
+	switch (workspace.diagnostic)
+	{
+	default:
+		results.set_number_of_results(4);
+		results.set_number_of_segments(workspace.segments_beginning_indices.size());
+		results.set_number_of_scalings(4);
+	}
+
+	return 0;
+};
+
 #endif

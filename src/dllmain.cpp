@@ -1,10 +1,10 @@
-﻿#include "../headers/dllmain.h"
+﻿#include "../include/dllmain.h"
 
 Data<double> workspace;                 // structure all the input data and global variables are stored in
 Results<double> results;                // the class all the results are stored in
 mu::Parser expression_parser;           // string expression parser and evaluator class
 static int execution_order = NULL;      // bitwise mask which used to determine whether the module was executed or not
-
+#include <queue>
 namespace myplasmadll
 {
 
@@ -34,10 +34,16 @@ namespace myplasmadll
         return 0;
     }
 
-    /* sets the additional parameters (1st param) for calculation (THE SIZE OF INPUT IS ALWAYS 12),
-    2nd param (optional) sets the initial values for string expression variables,
-    3rd param (optional) number of initial values */
-    int set_params(_In_ const double* in, _In_ const double* init_var_vals, _In_ const int init_vals_size)
+    /*  1st param type of diagnostic (calculation process depends of this param)
+        2nd param sets the additional parameters for calculation (THE SIZE OF INPUT IS ALWAYS 12),
+        3rd param (optional) sets the initial values for string expression variables,
+        4th param (optional) number of initial values,
+        5th param (optional) tells if initial value is fixed and not need to be changed (size is same as 2nd param) */
+    int set_params( _In_ const unsigned int calculation_type,
+                    _In_ const double* in, 
+                    _In_opt_ const double* init_var_vals, 
+                    _In_opt_ const int init_vals_size,
+                    _In_opt_ const int* is_init_val_fixed)
     {
         if (in == nullptr) return SHOUT_ERR(ERR_BadInputVecs);
         if ((in[1] < 0 || in[2] < 0 || in[1] > in[2])
@@ -52,8 +58,17 @@ namespace myplasmadll
             || in[4] < 0) return SHOUT_ERR(ERR_BadCutOff);
         if (in[5] < 0 || in[5] > 0.9) return SHOUT_ERR(ERR_BadLinFit);
 #if STRING_EXPRESSION > 0
-        if (init_var_vals != nullptr && init_vals_size != NULL && (execution_order & 1) == 0) return SHOUT_ERR(ERR_ExpressionNotSet); // string expression not set
-        else if (init_var_vals != nullptr && init_vals_size != NULL) memcpy(&workspace.variables_values[1], init_var_vals, sizeof(double) * init_vals_size);
+        if (init_var_vals != nullptr && init_vals_size != workspace.variables_values.size() - 1) 
+            return SHOUT_ERR("Number of initial values must be equal to the number of variables of the passed expression");
+        if (init_var_vals != nullptr && (execution_order & 1) == 0) 
+            return SHOUT_ERR(ERR_ExpressionNotSet); // string expression not set
+        else if (init_var_vals != nullptr) 
+            memcpy(&workspace.variables_values[1], init_var_vals, sizeof(double) * (workspace.variables_values.size() - 1));
+        if (is_init_val_fixed != nullptr && (execution_order & 1) == 0) 
+            return SHOUT_ERR(ERR_ExpressionNotSet); // string expression not set
+        else if (is_init_val_fixed != nullptr)
+            for (int i = 0; i < (workspace.variables_values.size() - 1); ++i) 
+                workspace.is_variable_fixed[i] = (is_init_val_fixed[i] > 0);
 #else
         if (init_var_vals != nullptr && init_vals_size != NULL)
         {
@@ -61,6 +76,7 @@ namespace myplasmadll
             memcpy(&workspace.variables_values[1], init_var_vals, sizeof(double) * init_vals_size);
         }
 #endif
+        workspace.diagnostic = calculation_type;        // тип обработки, зависящий от диагностики
 
         workspace.probe_area = in[0];		            // площадь поверхности зонда
         workspace.begin_time = in[1];		            // время начала обработки (опционально)
@@ -82,10 +98,10 @@ namespace myplasmadll
     }
 
     /* sets up passed string as expression (1st string),
-    sets up passed string as parameters of this expression (2nd string),
-    parameters should be separated from each other by delimeter (example: _,;|-),
-	delimeter can be set as third (optional) string (by default delimeters are set of : "\t \n,./*|_+-:;'()!%^&=<>[]"),
-	4th (optional) parameter of this function is independent variable of expression (default name is : 'x') */
+        sets up passed string as parameters of this expression (2nd string),
+        parameters should be separated from each other by delimeter (example: _,;|-),
+	    delimeter can be set as third (optional) string (by default delimeters are set of : "\t \n,./*|_+-:;'()!%^&=<>[]"),
+	    4th (optional) parameter of this function is independent variable of expression (default name is : 'x') */
     int set_approximation_equation( _In_ const char* s_expression,      _In_ const unsigned int expression_s_size,
                                     _In_ const char* s_variables,       _In_ const unsigned int variables_s_size,
                                     _In_opt_ const char* s_delimeter,   _In_opt_ const unsigned int delimeter_s_size,
@@ -104,7 +120,7 @@ namespace myplasmadll
         {
             expression_parser.SetExpr(myspace::utf8_decode(std::string(s_expression, s_expression + expression_s_size)));
 
-            workspace.variables_values = std::vector<double>(params_names.size()); // params values are all = 0, just to execute .Eval() and find mistakes, if any exist
+            workspace.variables_values = std::vector<double>(params_names.size(), NULL); // params values are all = 0, just to execute .Eval() and find mistakes, if any exist
 
             /* initialising parameters */
             for (int i = 0; i < workspace.variables_values.size(); ++i)
@@ -125,6 +141,7 @@ namespace myplasmadll
         /* if no error occured -> seting up std::string expression */
         workspace.s_expression = std::string(s_expression, s_expression + expression_s_size);
         workspace.names_of_expression_variables = params_names;
+        workspace.is_variable_fixed.resize(params_names.size() - 1, false);
 
         /* now we know that the expression is set */
         execution_order |= 1;
@@ -133,15 +150,15 @@ namespace myplasmadll
     }
 
     /* extract signal out from the whole dataset and perform calculation with particular type of diagnostic */
-    int calculate(_In_ const int calculation_type)
+    int calculate()
     {
         /* проверяем порядок вызова функций */
 #if STRING_EXPRESSION > 0
-        if (execution_order < 15) return SHOUT_ERR(ERR_NoetAllDataSet); // means that bitwise is less than 1.1.1.1
+        if (execution_order < 15) return SHOUT_ERR(ERR_NotAllDataSet); // means that bitwise is less than 1.1.1.1
 #else
-        if (execution_order < 14) return SHOUT_ERR(ERR_NoetAllDataSet); // means that bitwise is less than 1.1.1.0
+        if (execution_order < 14) return SHOUT_ERR(ERR_NotAllDataSet); // means that bitwise is less than 1.1.1.0
 #endif
-
+        
         int err = 0;
 
         /* преобразуем напряжение и сигнал с учетом усилителей/делителей/сопротивлений */
@@ -152,15 +169,8 @@ namespace myplasmadll
         ERR(erase_noise());
         /* подготавливаем один отрезок пилы */
         ERR(prepare_ramp());
-
-        /* подготавливаем необходимое пространство памяти в results */
-        switch (calculation_type)
-        {
-        default:
-            results.set_number_of_results(4);
-            results.set_number_of_segments(workspace.segments_beginning_indices.size());
-            results.set_number_of_scalings(4);
-        }
+        /* заполняем/проверяем workspace и выделяем память в results */
+        ERR(allocate_place_for_results());
 
 #define ISIGN workspace.segments_beginning_indices
 #define LEN results.get_size_of_segment()
@@ -184,9 +194,8 @@ namespace myplasmadll
 #endif
                 
                 /* обрабатываем отрезок и заполняем results */
-                ERR(make_one_segment(calculation_type, 
-                    results.ramp().data(), LEN,
-                    workspace.signal.data() + ISIGN[n], LEN));
+                ERR(_make_one_segment(  results.ramp().data(),              LEN,
+                                        workspace.signal.data() + ISIGN[n], LEN));
             }
 
 #if SHOW_PROGRESS > 0
@@ -212,34 +221,16 @@ namespace myplasmadll
 #undef LEN
     }
 
-    /* perform calculation at one segment. all the data must be cleaned out of noise and prepared already */
-    int make_one_segment(_In_ const int calculation_type,
-        _In_ const double* vx, _In_ const unsigned int x_size,
-        _In_ const double* vy, _In_ const unsigned int y_size)
+    /* perform calculation at one segment. all the data must be cleaned out of noise and prepared already.
+        this is the function for extern usage (wrapper of _make_one_segment) */
+    int make_one_segment(   _In_ const double* vx,  _In_ const unsigned int x_size,
+                            _In_ const double* vy,  _In_ const unsigned int y_size)
     {
 #if STRING_EXPRESSION > 0
-        if (execution_order < 3) return SHOUT_ERR(ERR_NoetAllDataSet); // means that bitwise is less than 0.0.1.1
+	    if (execution_order < 3) return SHOUT_ERR(ERR_NotAllDataSet); // means that bitwise is less than 0.0.1.1
 #else
-        if (execution_order < 2) return SHOUT_ERR(ERR_NoetAllDataSet); // means that bitwise is less than 0.0.1.0
+	    if (execution_order < 2) return SHOUT_ERR(ERR_NotAllDataSet); // means that bitwise is less than 0.0.1.0
 #endif
-
-        int err = 0;
-
-        std::vector <double> vparams = (workspace.variables_values.size() > 1) ? 
-            std::vector <double>(&workspace.variables_values[1], &workspace.variables_values[1] + workspace.variables_values.size() - 1) :
-            std::vector <double>();
-
-#if STRING_EXPRESSION > 0
-        ERR(mystringcompute::LevenbergMarquardt(std::vector<double>(vx, vx + x_size), std::vector<double>(vy, vy + y_size), vparams));
-#else
-        ERR(myspace::LevenbergMarquardt(std::vector<double>(vx, vx + x_size), std::vector<double>(vy, vy + y_size), vparams, fx));
-#endif
-
-    EndBlock:
-
-        return 0;
-
-#undef NUM_OF_SEG
     }
 
     /* returns the size of stored data as bytes amount */

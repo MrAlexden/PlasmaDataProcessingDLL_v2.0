@@ -32,7 +32,7 @@ typedef enum
     ERR_StorageIsEmpty = -6220,     // No data been set to work with. Check input arrays
     ERR_BadExpression = -6221,      // Error at passed expression
     ERR_ExpressionNotSet = -6222,   // Setting up of initial values of variables is only allowed after setting up the expression
-    ERR_NoetAllDataSet = -6223      // Running calculation is only allowed after setting up voltage data, signal data and additional data
+    ERR_NotAllDataSet = -6223      // Running calculation is only allowed after setting up voltage data, signal data and additional data
 } error_codes;
 
 /* return the description of a particular error code */
@@ -83,7 +83,7 @@ end time must be less then total time, more then 0";
         return "No data been set to work with. Check input arrays";
     case ERR_ExpressionNotSet:
         return "Setting up of initial values of variables is only allowed after setting up the expression";
-    case ERR_NoetAllDataSet:
+    case ERR_NotAllDataSet:
         return "Running calculation is only allowed after setting up voltage data, signal data and additional data";
     default:
         return "No Error";

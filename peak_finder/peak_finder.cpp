@@ -11,8 +11,8 @@ static inline void vectorElementsProduct(_In_ const std::vector <double>& a,
 }
 
 static inline void findIndicesLessThan(_In_ const std::vector <double>& in,
-									   _In_ double threshold,
-									   _Out_ std::vector <int>& indices)
+									   _In_ const double threshold,
+									   _Out_ std::vector <long long>& indices)
 {
 	for (int i = 0; i < in.size(); ++i)
 		if (in[i] < threshold)
@@ -22,7 +22,7 @@ static inline void findIndicesLessThan(_In_ const std::vector <double>& in,
 template <typename T>
 	requires std::is_convertible_v<T, double>
 static inline void selectElementsFromIndices(_In_ const std::vector <T>& in,
-											 _In_ const std::vector <int>& indices,
+											 _In_ const std::vector <long long>& indices,
 											 _Out_ std::vector <T>& out)
 {
 	out.resize(indices.size());
@@ -31,7 +31,7 @@ static inline void selectElementsFromIndices(_In_ const std::vector <T>& in,
 		out[i] = in[indices[i]];
 }
 
-static inline void signVector(const std::vector <double>& in, std::vector<int>& out)
+static inline void signVector(const std::vector <double>& in, std::vector<long long>& out)
 {
 	out.resize(in.size());
 
@@ -47,7 +47,7 @@ static inline void signVector(const std::vector <double>& in, std::vector<int>& 
 }
 
 int PeakFinder::findPeaks(_In_ const std::vector <double>& in,
-						  _Out_ std::vector <int>& peakInds,
+						  _Out_ std::vector <long long>& peakInds,
 						  _In_opt_ bool includeEndpoints,
 						  _In_opt_ int extrema)
 {
@@ -71,7 +71,7 @@ int PeakFinder::findPeaks(_In_ const std::vector <double>& in,
 
 	vectorElementsProduct(dx0, dx0_1, dx0_2);
 
-	std::vector<int> ind;
+	std::vector<long long> ind;
 	findIndicesLessThan(dx0_2, 0, ind); // Find where the derivative changes sign	
 	std::vector <double> x;
 	double leftMin;
@@ -119,7 +119,7 @@ int PeakFinder::findPeaks(_In_ const std::vector <double>& in,
 			std::vector <double> xSub0(x.begin(), x.begin() + 3); //tener cuidado subvector
 			std::vector <double> xDiff = diff(xSub0); //tener cuidado subvector
 
-			std::vector<int> signDx;
+			std::vector<long long> signDx;
 			signVector(xDiff, signDx);
 
 			if (signDx[0] <= 0) // The first point is larger or equal to the second
@@ -234,15 +234,9 @@ int PeakFinder::findPeaks(_In_ const std::vector <double>& in,
 			try
 			{
 				if (cInd < peakLoc.size())
-				{
-					std::vector<int> peakLocTmp(peakLoc.begin(), peakLoc.begin() + cInd - 1);
-					selectElementsFromIndices(ind, peakLocTmp, peakInds);
-				}
+					selectElementsFromIndices(ind, std::vector<long long>(peakLoc.begin(), peakLoc.begin() + cInd - 1), peakInds);
 				else
-				{
-					std::vector<int> peakLocTmp(peakLoc.begin(), peakLoc.begin() + peakLoc.size() - 1);
-					selectElementsFromIndices(ind, peakLocTmp, peakInds);
-				}
+					selectElementsFromIndices(ind, std::vector<long long>(peakLoc.begin(), peakLoc.begin() + cInd - 1), peakInds);
 			}
 			catch (...)
 			{

@@ -16,7 +16,7 @@
     <Filter Include="Header Files\diagnostics">
       <UniqueIdentifier>{68cf88f0-3b8a-4fae-a3ba-85f9dcac0b7b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\headers">
+    <Filter Include="Header Files\include">
       <UniqueIdentifier>{b2917c31-c8e8-41f2-b8fc-6e0a75d3d62f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -36,42 +36,42 @@
     <ClInclude Include="diagnostics\langmuir_probe.h">
       <Filter>Header Files\diagnostics</Filter>
     </ClInclude>
-    <ClInclude Include="headers\dllmain.h">
-      <Filter>Header Files\headers</Filter>
-    </ClInclude>
-    <ClInclude Include="headers\error_codes.h">
-      <Filter>Header Files\headers</Filter>
-    </ClInclude>
-    <ClInclude Include="headers\interface.h">
-      <Filter>Header Files\headers</Filter>
-    </ClInclude>
-    <ClInclude Include="headers\results_container.h">
-      <Filter>Header Files\headers</Filter>
-    </ClInclude>
-    <ClInclude Include="headers\support_functions.h">
-      <Filter>Header Files\headers</Filter>
-    </ClInclude>
-    <ClInclude Include="headers\usefull_signal_extractor.h">
-      <Filter>Header Files\headers</Filter>
-    </ClInclude>
-    <ClInclude Include="headers\workspace.h">
-      <Filter>Header Files\headers</Filter>
-    </ClInclude>
     <ClInclude Include="levenberg_marquardt\levenberg_marquardt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="opencl\gpu_compute.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\dllmain.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\error_codes.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\interface.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\results_container.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\support_functions.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\usefull_signal_extractor.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\workspace.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="peak_finder\peak_finder.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="OpenCL\kernel.cpp">
+    <ClCompile Include="src\dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\dllmain.cpp">
+    <ClCompile Include="opencl\kernel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

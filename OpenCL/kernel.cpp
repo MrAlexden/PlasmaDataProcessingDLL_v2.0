@@ -2,7 +2,7 @@
 
 #include "opencl.hpp" // for WORKGROUP_SIZE definition
 #include "kernel.hpp" // note: unbalanced round brackets () are not allowed and string literals can't be arbitrarily long, so periodically interrupt with )+R(
-#include "../headers/workspace.h"
+#include "../include/workspace.h"
 
 static std::string get_expression_as_string_accounting_variables(std::string&& str_x);
 struct name_replacement_position { std::string name; std::string replacement; size_t position; };

@@ -6,7 +6,7 @@
 #include <vector>       // for vector
 #include <algorithm>    // for min_element|max_element
 #include "../../PlasmaDataProcessing_DLL/PlasmaDataProcessing/Matrix_Class/mynamespace.h"
-#include "../headers/error_codes.h"
+#include "../include/error_codes.h"
 
 using namespace myspace;
 
@@ -23,7 +23,7 @@ namespace PeakFinder {
         peakInds: Indices of peaks in x0
     */
     int findPeaks(_In_ const std::vector <double>&,
-                  _Out_ std::vector <int>&,
+                  _Out_ std::vector <long long>&,
                   _In_opt_ const bool = false,
                   _In_opt_ const int = 1);
 };

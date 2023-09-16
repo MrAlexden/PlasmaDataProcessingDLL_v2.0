@@ -7,6 +7,8 @@
 
 #include "../myspace/mynamespace.h"
 
+extern mu::Parser expression_parser;
+
 namespace mystringcompute
 {
 

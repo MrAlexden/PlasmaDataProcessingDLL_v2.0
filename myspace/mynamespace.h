@@ -1366,8 +1366,8 @@ namespace myspace
 			return Complex(this->r, this->i * -1);
 		};
 
-		double r = 0;
-		double i = 0;
+		double r = 0;	// real part
+		double i = 0;	// imaginary part
 	};
 
 #endif
@@ -1991,7 +1991,7 @@ namespace myspace
 	 * vector of size 2w+1, e.g. for w=2 b=(0,0,1,0,0). evaluating the polynome
 	 * yields the sg-coefficients.  at the border non symmectric vectors b are
 	 * used. */
-	inline std::vector<double> sg_smooth(	_In_ const std::vector <double> v_in,
+	inline std::vector<double> sg_smooth(	_In_ const std::vector <double> & v_in,
 											_In_ const size_t width,
 											_In_ const size_t deg)
 	{

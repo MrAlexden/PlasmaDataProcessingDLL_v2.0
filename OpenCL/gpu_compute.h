@@ -5,7 +5,7 @@
 
 #if GPU_COMPUTATION > 0
 
-#include "../opencl/opencl.hpp"
+#include "opencl.hpp"
 
 namespace mygpucompute
 {
